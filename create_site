@@ -1,0 +1,39 @@
+#!/bin/bash
+# Duplicate the base vhost template, will need SUDO!!!
+if [[ $USER != "root" ]]; then
+        echo "This script must be run as root!"
+        exit 0
+fi
+sudo -v
+
+if [[ ( $1 == "--help") ||  $1 == "-h" ]]; then
+        echo "[command] [site name] [mysql password]"
+        exit 0
+fi
+
+if [ -z "$1" ]; then
+        echo "Site name cannot be empty!"
+        exit 0
+fi
+
+if [ -z "$2" ]; then
+        echo "MySQL password cannot be empty!"
+        exit 0
+fi
+
+echo "Creating directories: /var/www/test_environment/$1/public_html"
+mkdir -p /var/www/test_environment/$1/public_html
+
+echo "Creating a vhost for $1 with a webroot in /var/www/test_environment/$1/public_html"
+sudo cp /etc/apache2/sites-available/template /etc/apache2/sites-available/$1.conf
+
+sudo sed -i 's/template/'$1'/g' /etc/apache2/sites-available/$1.conf
+sudo sed -i '1s/^/127.0.0.1       '$1'.local\n/' /etc/hosts
+
+sudo a2ensite $1
+sudo service apache2 reload
+
+echo "Done, please browse to http://$1.local or https://$1.local to check!"
+
+echo "Creating database and user"
+echo "CREATE DATABASE $1; CREATE USER '$1'@'localhost' IDENTIFIED BY '$2'; GRANT ALL PRIVILEGES ON $1.* TO '$1'@'localhost';" | mysql --user=root --password=YOUR PASSWORD HERE!!!
